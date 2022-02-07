@@ -1,0 +1,48 @@
+### NOTE: These are the general commands run for each 16S rRNA sequencing experiment. Metadata files for each experiment are on Github. FASTQ files for all experiments can be found in the NCBI Sequence Read Archive (project ____). 
+
+# Activate QIIME2 anaconda environment
+conda activate qiime2-2020.11
+
+### Import FASTQ files into QIIME2 (Casava1.8 format). Files are in folder <FASTQ/>
+qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' --input-path FASTQ/ --input-format CasavaOneEightSingleLanePerSampleDirFmt --output-path demux-paired.qza
+# Community dynamics experiment (Figure 4) used --type 'SampleData[SingleEndSequencesWithQuality]'
+
+### Join paired-end reads (if applicable)
+qiime vsearch join-pairs --i-demultiplexed-seqs demux-paired.qza --o-joined-sequences demux-joined.qza
+
+### Generate visualization file to assess quantity, length, and quality of joined sequences
+qiime demux summarize --i-data demux-joined.qza --o-visualization demux-joined.qzv
+
+### Quality-filter and denoise reads using Deblur, default parameters
+qiime quality-filter q-score --i-demux demux-joined.qza --o-filtered-sequences demux-joined-filter.qza --o-filter-stats demux-joined-filterstats.qza
+
+qiime deblur denoise-16S --i-demultiplexed-seqs demux-joined-filter.qza --p-trim-length <see comment below> --o-representative-sequences rep-seqs-joined.qza --o-table table-joined.qza --p-sample-stats --o-stats deblur-stats-joined.qza
+# --p-trim-length determined by length and quality of reads in demux-joined.qzv. Reads were trimmed to 150bp for the human-/machine-assembled, cryopreservation, community dynamics, and PMA experiments. Reads were trimmed to 200bp for the plant colonization experiment. 
+
+### Generate phylogenetic tree and alpha rarefaction curve
+qiime phylogeny align-to-tree-mafft-fasttree --i-sequences rep-seqs-joined.qza --o-alignment aligned-rep-seqs-joined.qza --o-masked-alignment masked-aligned-rep-seqs-joined.qza --o-tree unrooted-tree-joined.qza --o-rooted-tree rooted-tree-joined.qza
+
+qiime diversity alpha-rarefaction --i-table table-joined.qza --i-phylogeny rooted-tree-joined.qza --p-max-depth 2000 --m-metadata-file metadata.tsv --o-visualization alpha-rarefaction-joined.qzv
+
+### Basic alpha- and beta-diversity analyses (includes Shannon diversity index)
+qiime diversity core-metrics-phylogenetic --i-phylogeny rooted-tree-joined.qza --i-table table-joined.qza --p-sampling-depth 500 --m-metadata-file metadata.tsv --output-dir core-metrics-phylogenetics
+
+### Robust Aitchison distance analysis (requires DEICODE plug-in for QIIME2)
+qiime deicode rpca --i-table table-joined.qza --p-min-feature-count 10 --p-min-sample-count 500 --o-biplot rpca_ordination.qza --o-distance-matrix rpca_distance.qza
+
+qiime emperor biplot --i-biplot rpca_ordination.qza --m-sample-metadata-file metadata.tsv --m-feature-metadata.file taxonomy.qza --o-visualization rpca_biplot.qzv
+
+### Train classifier with custom database of isolate 16S sequences and primers used for library preparation
+qiime tools import --type 'FeatureData[Sequence]' --input-path isolates_16S_sequences.txt --output-path isolates_16S_sequences.qza
+
+qiime tools import --type 'FeatureData[Taxonomy]' --input-format HeaderlessTSVTaxonomyFormat --input-path isolates_taxonomy.txt --output-path isolates_taxonomy.qza
+
+qiime feature-classifier extract-reads --i-sequences isolates_16Sseq_classifier.qza --p-f-primer GTGYCAGCMGCCGCGGTAA --p-r-primer GGACTACNVGGGTWTCTAAT --p-trunc-len <use read length from above> --o-reads isolates_ref_seqs.qza
+# For community dynamics experiment, --p-f-primer CCTACGGGNGGCWGCAG and --p-r-primer GACTACHVGGGTATCTAATCC
+
+qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads isolates_ref_seqs.qza --i-reference-taxonomy isolates_taxonomy.qza --o-classifier isolates_classifier.qza
+
+### Align reads to custom classifier and generate taxonomy barplots
+qiime feature-classifier classify-sklearn --i-classifier isolates_classifier.qza --i-reads rep-seqs-joined.qza --o-classification taxonomy.qza
+
+qiime taxa barplot --i-table table-joined.qza --i-taxonomy taxonomy.qza --m-metadata-file metadata.tsv --o-visualization taxa-plots-joined.qzv
