@@ -1,0 +1,35 @@
+### Code for shotgun metagenomics sequencing analysis for human-/machine-assembled communities
+# Packages used: FastQC (v0.11.5), MultiQC (v1.9), Trimmomatic (v0.36), bowtie2 (v2.2.3)
+
+### Run FastQC and MultiQC on FASTQ files. Files are in <FASTQ_files>
+fastqc_0.11.5/FastQC/fastqc FASTQ_files/*
+multiqc .
+
+### Run Trimmomatic to remove adapters and quality-filter reads
+cd FASTQ_files
+
+list1=($(find . -name '*_R1_001.fastq.gz' | sort))
+list2=($(find . -name '*_R2_001.fastq.gz' | sort))                                                                                                                                                                                              
+for i in {0..27}                                                                                                        
+do                                                                                                                      
+java -jar /opt/trimmomatic/0.36/trimmomatic-0.36.jar PE -phred33 ${list1[i]} ${list2[i]} ${list1[i]}_trimmomatic_F_paired.fq.gz ${list1[i]}_trimmomatic_F_unpaired.fq.gz ${list1[i]}_trimmomatic_R_paired.fq.gz ${list1[i]}_trimmomatic_R_unpaired.fq.gz  ILLUMINACLIP:NexteraPE-PE.fa:2:30:10 LEADING:10 TRAILING:10 CROP:130 SLIDINGWINDOW:4:15 MINLEN:36
+done
+
+mv *trimmomatic* fastq_postTrimmomatic/
+
+### Run FastQC on post-Trimmomatic files
+fastqc_0.11.5/FastQC/fastqc fastq_postTrimmomatic/*
+multiqc fastq_postTrimmomatic/
+
+### Map sequences to custom index of isolate genomes using bowtie2
+# Create custom bowtie2 index
+bowtie2-build soil_strains.ffn soil_strains_index -p 40 --large-index
+
+# Map trimmed fastq files to index
+cd fastq_postTrimmomatic
+list1=($(find . -name '*trimmomatic_F_paired.fq.gz' | sort))
+list2=($(find . -name '*trimmomatic_R_paired.fq.gz' | sort))                                                                                                                                                                                    
+for i in {0..27};                                                                                                       
+do
+bowtie2 --threads 10 -x soil_strains_index -1 ${list1[i]} -2 ${list2[i]} -S ${list1[i]}.bowtie.sam
+done
