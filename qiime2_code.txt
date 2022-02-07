@@ -35,7 +35,7 @@ qiime emperor biplot --i-biplot rpca_ordination.qza --m-sample-metadata-file met
 ### Train classifier with custom database of isolate 16S sequences and primers used for library preparation
 qiime tools import --type 'FeatureData[Sequence]' --input-path isolates_16S_sequences.fasta --output-path isolates_16S_sequences.qza
 
-qiime tools import --type 'FeatureData[Taxonomy]' --input-format HeaderlessTSVTaxonomyFormat --input-path isolates_taxonomy.txt --output-path isolates_taxonomy.qza
+qiime tools import --type 'FeatureData[Taxonomy]' --input-format HeaderlessTSVTaxonomyFormat --input-path isolates_taxonomy_qiime.tsv --output-path isolates_taxonomy.qza
 
 qiime feature-classifier extract-reads --i-sequences isolates_16Sseq_classifier.qza --p-f-primer GTGYCAGCMGCCGCGGTAA --p-r-primer GGACTACNVGGGTWTCTAAT --p-trunc-len <use read length from above> --o-reads isolates_ref_seqs.qza
 # For community dynamics experiment, --p-f-primer CCTACGGGNGGCWGCAG and --p-r-primer GACTACHVGGGTATCTAATCC
