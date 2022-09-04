@@ -1,11 +1,11 @@
-### NOTE: These are the general commands run for each 16S rRNA sequencing experiment. Metadata files for each experiment are on Github. FASTQ files for all experiments can be found in the NCBI Sequence Read Archive (project ____). 
+### NOTE: These are the general commands run for each 16S rRNA sequencing experiment. Metadata files for each experiment are on Github. FASTQ files for all experiments can be found in the NCBI Sequence Read Archive (PRJNA807292). 
 
 # Activate QIIME2 anaconda environment
 conda activate qiime2-2020.11
 
 ### Import FASTQ files into QIIME2 (Casava1.8 format). Files are in folder <FASTQ/>
 qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' --input-path FASTQ/ --input-format CasavaOneEightSingleLanePerSampleDirFmt --output-path demux-paired.qza
-# Community dynamics experiment (Figure 4) used --type 'SampleData[SingleEndSequencesWithQuality]'
+# Community dynamics experiment (Figure 4) used --type 'SampleData[SequencesWithQuality]'
 
 ### Join paired-end reads (if applicable)
 qiime vsearch join-pairs --i-demultiplexed-seqs demux-paired.qza --o-joined-sequences demux-joined.qza
