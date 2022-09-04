@@ -37,7 +37,7 @@ qiime tools import --type 'FeatureData[Sequence]' --input-path isolates_16S_sequ
 
 qiime tools import --type 'FeatureData[Taxonomy]' --input-format HeaderlessTSVTaxonomyFormat --input-path isolates_taxonomy_qiime.tsv --output-path isolates_taxonomy.qza
 
-qiime feature-classifier extract-reads --i-sequences isolates_16Sseq_classifier.qza --p-f-primer GTGYCAGCMGCCGCGGTAA --p-r-primer GGACTACNVGGGTWTCTAAT --p-trunc-len <use read length from above> --o-reads isolates_ref_seqs.qza
+qiime feature-classifier extract-reads --i-sequences isolates_16S_sequences.qza --p-f-primer GTGYCAGCMGCCGCGGTAA --p-r-primer GGACTACNVGGGTWTCTAAT --p-trunc-len <use read length from above> --o-reads isolates_ref_seqs.qza
 # For community dynamics experiment, --p-f-primer CCTACGGGNGGCWGCAG and --p-r-primer GACTACHVGGGTATCTAATCC
 
 qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads isolates_ref_seqs.qza --i-reference-taxonomy isolates_taxonomy.qza --o-classifier isolates_classifier.qza
